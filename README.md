@@ -7,9 +7,9 @@ An automated systematic trading system for cryptocurrencies:
 2.) The SQL database is automatically updated with the latest market data, with new data added as it becomes available.
 
 3.) Strategies are developed to have standardised inputs and outputs, allowing standardised back-testing on historical market data.
-Profitable strategies are kept.
+The prerequisites of profitable strategies are listed for later reference .
 
-4.) The system uses the appropriate historical data alongside current market data to confirm the formation of a profitable market trend.
+4.) The system uses relevant historical data alongside current market data to confirm the formation of a profitable market trend according to the prerequisites.
 
 5.) Once a potential trade is identified, it is traded on Binance by sending the appropriate API commands.
 
