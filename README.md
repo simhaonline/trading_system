@@ -1,6 +1,7 @@
 # trading_system
 An automated systematic trading system for cryptocurrencies.
 
+
 1.) The entire history of market data for each Binance cryptocurrency is stored in a SQL database
 
 2.) The SQL database is automatically updated with the latest market data, with new data added as it becomes available
