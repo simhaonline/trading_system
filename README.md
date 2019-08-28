@@ -15,3 +15,6 @@ The prerequisites of profitable strategies are listed for later reference .
 
 6.) There is scope for managing trades with position size calculations based on past performance of a given strategy,
     also scope for managing a portfolio - rebalancing via % of assets allocated to different types of strategies, as appropriate.
+
+
+![Buy/ sell signals for NEOBTC (1d)](http://u.cubeupload.com/henryp/NEOBTC1dSignals.png)
