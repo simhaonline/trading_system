@@ -4,7 +4,7 @@ import sqlite3
 
 from itertools import product
 import numpy as np
-import pandas as pd
+#import pandas as pd
 import sys
 import csv
 import os
@@ -25,6 +25,59 @@ class Operations(Calculations):
         self.conn = conn
         self.c = conn.cursor()
         
+        
+    def check_db_gaps(self, pair, tick_size):
+        """Check if any gaps exist in the table"""
+        binance_records = self.timestamps_on_binance(pair, tick_size) #amount of records theoretically on binance
+        table_name = self.return_table_name(pair, tick_size)
+        self.c.execute(f"""SELECT Unix_Open FROM {table_name}""")
+        table_records = self.c.fetchall() # amount of records in table
+        actual_difference = np.setdiff1d(binance_records, table_records) # find elements of binance_records that are not in table_records 
+        """
+        All elements in actual differences need to be downloaded, but rather than request them individually and as
+        many records will occur in a row, start/ end points for missing periods are identified
+        """
+        records_to_dl = np.isin(binance_records,actual_difference) # create boolean array of binance records, false where binance record already exists in table
+        new = np.where(records_to_dl == False, 0, binance_records) # for each record in binance records, if record in table, write 2, else write timestamp
+        """
+        Compare each element of an array against the next element by creating a copy of the array and deleting the first element from the new and the last from the old
+        """
+        diff_between_elements = np.diff(new)
+        tick_in_ms = self.return_tick_in_ms(tick_size)
+        arr = np.where(diff_between_elements == 0, 2, diff_between_elements) # if not downloading set value to 2
+        arr_start = np.where(arr>tick_in_ms, -1, arr) # start timestamps
+        arr_start_end = np.where(arr_start<-1, 1, arr_start) # end timestamps
+        arr_dl = np.where(arr_start_end>2, 0, arr_start_end) # set values inbetween start and end to 0
+        """
+        Add back in what the first element would have been if it wasn't lost when differencing
+        """
+        first_lost_element = {-1:2, 0:-1, 1:-1, 2:2}
+        for adj_e, insert_e in first_lost_element.items():
+            if arr_dl[0] == adj_e:
+                arr_dl = np.insert(arr_dl, 0, insert_e)
+        """
+        Adjust the last element if the array ends during specifying records to be download. force last element to be end. 
+        """       
+        starts = arr_dl[arr_dl == -1]
+        ends = arr_dl[arr_dl == 1]
+        if arr_dl[-1] == 0:
+                arr_dl = np.delete(arr_dl,-1) # delete last value from array since last element should be a 1 
+                arr_dl = np.insert(arr_dl, -1, 1) # add 1 to end of array
+        """
+        Return starts, ends and count how many changes will be made.
+        """
+        starts = binance_records[arr_dl == -1]
+        ends = binance_records[arr_dl == 1]
+        if len(starts) != len(ends):
+            print("Error: starts does not equal ends!")
+            sys.exit()
+        count = 0
+        for start, end in zip(list(starts), list(ends)):
+            ticks_in_period = self.calc_db_ticks(start, end, tick_in_ms)
+            count += ticks_in_period
+        print(f"Up to {count} records will be downloaded.")    
+        return starts, ends 
+         
 
     def operator_update(self, pair, tick_size):
         """Starting at the most recent timestamp, the operator will populate a table."""
@@ -38,7 +91,7 @@ class Operations(Calculations):
             #calculate chunks to download
             tick_in_ms = self.return_tick_in_ms(tick_size)
             ticks_to_dl = self.calc_chunks(start, end, tick_in_ms)
-            batch_size = 500
+            batch_size = 1000
             if ticks_to_dl>batch_size:
                 batches_remaining = int(np.ceil(ticks_to_dl/batch_size))
                 batches_complete = 0
@@ -128,32 +181,13 @@ class Operations(Calculations):
         ohlc_formatted = self.ohlc_format_data(ohlc_data)
         return ohlc_formatted
 
-
-            
-    def ohlc_format_data(self, ohlc_data):
-        """With the ohlc data from Binance, format into DataFrames that are useful"""
-        column_headers = self.ohlc_return_column_headers()
-        df = pd.DataFrame(ohlc_data, columns=column_headers)
-        float_columns = column_headers[1:6] + column_headers[7:11]
-        open_datetime = pd.to_datetime(df['Unix_Open'], unit='ms').dt.strftime('%Y-%m-%d %H:%M:%S')
-        df.insert(0, "UTC_Open", open_datetime)
-        close_datetime = pd.to_datetime(df['Unix_Close'], unit='ms').dt.strftime('%Y-%m-%d %H:%M:%S')
-        df.insert(7, "UTC_Close", close_datetime)
-        df.drop('Ignore', axis='columns', inplace=True)
-        for fl_col in float_columns:
-            df[f'{fl_col}'] = pd.to_numeric(df[f'{fl_col}'], downcast='float', errors='coerce')
-        return df
-    
-    
-
-
-    
     
     def get_latest_timestamp(self, pair, tick_size):
         table_name = self.return_table_name(pair, tick_size)
         self.c.execute(f"""SELECT MAX(Unix_Open) FROM {table_name}""")
         result = self.c.fetchone()[0]      
         return result           
+    
     
     def record_exists_in_table(self, timestamp, table_name):
         """Lookup timestamp in table, if exists, return True"""
@@ -164,6 +198,7 @@ class Operations(Calculations):
             return True
         else:
             return False
+    
     
     def insert_into_db(self, pair, tick_size, data):
         """Take ohlc formatted data and insert it into a table
@@ -243,6 +278,7 @@ class Operations(Calculations):
         self.conn.commit()
         print("Master symbols table has been refreshed.")  
         
+        
     def create_all_tables(self):
         """Creates a pairs - tick size table that holds every combination of pairs/tick_size in it. """
         data = self.create_pairs_ticks_combinations()
@@ -266,6 +302,40 @@ class Operations(Calculations):
         print("Tables have been updated for all possible pair-tick size combinations.")    
         
         
+    def new_create_table(self, pair, tick_size):
+        """Create a new table with a pair and tick size"""
+        table_name = self.return_table_name(pair, tick_size)
+        self.c.execute(f"""CREATE TABLE IF NOT EXISTS {table_name} (
+            Unix_Open INTEGER NOT NULL PRIMARY KEY,
+            UTC_Open TEXT NOT NULL,
+            Open REAL NOT NULL,
+            High REAL NOT NULL,
+            Low REAL NOT NULL,
+            Close REAL NOT NULL,
+            Volume REAL NOT NULL,
+            Unix_Close INTEGER NOT NULL,
+            UTC_Close TEXT NOT NULL,
+            Quote_Asset_Volume REAL NOT NULL,
+            Number_of_Trades INTEGER NOT NULL,
+            Taker_Buy_Base_Asset_Volume REAL NOT NULL,
+            Taker_Buy_Quote_Asset_Volume REAL NOT NULL
+            )""")
+        print("Tables have been updated for all possible pair-tick size combinations.")
+        
+    
+    def check_allowed_timestamp(self, data, tick_size):
+        """
+        Before insert into table, check the timestamps are allowed. If not, remove them.
+        use arrays.
+        """
+        pass
+    
+    
+    def table_delete_unusual_timestamps(self):
+        """
+        cross reference the expected timestamps in table with the actual, delete any rows that are unusual
+        """
+        pass
         
         
     def return_new_symbols(self):
@@ -291,9 +361,7 @@ class Operations(Calculations):
             self.c.execute("""INSERT INTO master_symbols (Master_pair_list) VALUES (?)""", (symbol,))
             print(f"{symbol} was added to the master symbols table.")
         self.conn.commit()
-        
-
-        
+         
         
     def populate_table(self, pair, tick_size):
         """Download the latest Binance symbols. If any are new then add them to the master symbols table. """
@@ -301,7 +369,6 @@ class Operations(Calculations):
         end = 'now'
         data = self.ohlc(pair, tick_size, start, end)
         self.insert_into_db(pair, tick_size, data)
-        
 
         
     def mass_populate_table(self):
@@ -320,7 +387,16 @@ class Operations(Calculations):
                print("already done (check this).")
             else:
                 print("broke")
-                
+        
+        
+    def load_data(self, pair, tick_size, columns):
+        """load the data from the SQL database and return as a dataframe"""
+        table_name = self.return_table_name(pair, tick_size)
+        self.c.execute(f"""SELECT * FROM {table_name}""")   #will want to specify which data in future (eg. skip rows if missing data)
+        results = self.c.fetchall()
+        data = pd.DataFrame(results, columns=columns)
+        return data
+        
     def operator_mass_populate_table(self):
         pairs_ticks = self.create_pairs_ticks_combinations()
         mass_operator_completed = 0
@@ -329,10 +405,7 @@ class Operations(Calculations):
             tick_size = self.reverse_tick_size_formatting(formatted_tick_size)
             self.operator(pair, tick_size)
             mass_operator_completed += 1
-            print(f"mass operated has completed {mass_operator_completed} table(s).")
-            
-            
-            
+            print(f"mass operated has completed {mass_operator_completed} table(s).")   
 
             
     def check_populated_table_records(self, combo):
@@ -344,22 +417,24 @@ class Operations(Calculations):
          if os.path.getsize(f"{fpath}/{fname}") > 0:
              #return True if record exists, False if not
              in_file = self.check_record_exists(fpath, fname, combo)
-#             print(f"in file?: {in_file}")
              return in_file
          else:
             print("empty file")
             return False      
+
 
     def check_folder_exists(self,fpath):
         """ create folder to save data if not already existing"""
         if not os.path.exists(fpath):
             os.makedirs(fpath)    
 
+
     def check_file_exists(self, fpath, fname):
         """Check if file exists"""
         if not os.path.isfile(f"{fpath}/{fname}"):
              with open(f"{fpath}/{fname}", 'w') as f_obj:
                  pass
+             
 
     def check_record_exists(self, fpath, fname, combo):
         """check if record within file exists"""
@@ -369,9 +444,7 @@ class Operations(Calculations):
                  for field in row:
                      #if combo exists in table, return True
                      if field == combo:
-#                         print("returning true...")
                          return True
-#             print("returning false...")
              return False        
            
                 
@@ -391,6 +464,7 @@ class Operations(Calculations):
         else:
             print("error at record_populated_table")
             
+            
     def get_master_symbols(self):
         """Update db and then create a list of all the symbols in the master symbol table. """
         self.update_master_symbols_table()
@@ -406,6 +480,3 @@ class Operations(Calculations):
         all_pairs = self.get_master_symbols()
         pairs_ticks = [pair+"_"+fts for pair, fts in product(all_pairs, fts)]
         return pairs_ticks
-    
-
-    

@@ -37,6 +37,7 @@ class RefInfo(Account):
             'Ignore']
         return column_headers
     
+    
     def return_db_headers(self):
         """Return the ohlc headers for the pair - tick size tables"""
         column_headers = [
@@ -55,3 +56,19 @@ class RefInfo(Account):
             'Taker_Buy_Quote_Asset_Volume'
             ]        
         return column_headers
+    
+    
+    def return_strategy_dict(self):
+        """For a given strategy name, return the required headers"""
+        db_headers = self.return_db_headers()
+        strat_dict  = {
+                'rolling_avg2':db_headers[1,2,3]                
+                }
+        return strat_dict
+        
+        
+        
+        
+        
+        
+        

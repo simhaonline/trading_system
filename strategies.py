@@ -1,3 +1,9 @@
+
+# https://towardsdatascience.com/trading-strategy-technical-analysis-with-python-ta-lib-3ce9d6ce5614
+
+
+
+
 from operations import Operations
 
 import pandas as pd
@@ -20,6 +26,16 @@ class Strategy(Operations):
         plt.style.use('seaborn-deep')
 
 
+    def rolling_avg2(self, pair, tick_size):
+        """
+        WIP
+        Standardised method for rolling average
+        """
+        trader.operator_update(pair, tick_size) # add new data to file
+        columns = self.return_strategy_headers('rolling_avg2') #
+        data = self.load_data(pair, tick_size, columns) # load data as dataframe    
+
+    
     def rolling_avg(self,pair, tick_size, start, end):
         """Apply rolling average strategy.
         """

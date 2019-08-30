@@ -6,11 +6,13 @@ class GetData(RefInfo):
     """
     def __init__(self):
         super(GetData, self).__init__()
+        
     
     def ohlc_get_data(self, pair, tick_size, start, end, limit=1000):
         """Kline/candlestick bars for a symbol. Klines (ohlc candlesticks) are uniquely identified by their open time."""
         ohlc_data = self.client.get_historical_klines(pair, tick_size, start, end, limit)
         return ohlc_data
+    
     
     def get_earliest_valid_timestamp(self, pair, tick_size):
         """get earliest valid timestamp for pair from Binance."""
@@ -22,6 +24,7 @@ class GetData(RefInfo):
             #endTime=None
         )
         return kline[0][0]   
+    
     
     def get_all_pairs(self):
         """Generates a list of all possible trading pairs"""
