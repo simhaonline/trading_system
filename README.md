@@ -18,3 +18,26 @@ The prerequisites of profitable strategies are listed for later reference .
 
 
 ![Buy/ sell signals for NEOBTC (1d)](http://u.cubeupload.com/henryp/NEOBTC1dSignals.png)
+
+File guide:
+
+account.py
+Exchange functions that relate directly to exchange information or account information.
+
+return_info.py
+Fetches generic data not requiring any additional information (parameters) to retrieve.
+
+gets_checks.py
+Consisting of 'gets' and 'checks', these functions return data based on inputs (parameters), where 'checks' are limited to returning True or False.
+
+format.py
+Consisting of reformatting functions. These functions require an input and return it reformatted. 
+
+calculations.py
+Takes an input and returns the logical output. 
+
+operations.py
+Procedures consisting of gets, checks, calculations, formattings and custom code for that specifc operation. 
+
+strategies.py
+Functions that produce buy/sell signals based on logic underlying the strategy.
