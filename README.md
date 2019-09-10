@@ -1,5 +1,4 @@
-# trading_system
-An automated systematic trading system for cryptocurrencies
+# An automated system for trading cryptocurrencies
 
 Overview:
 
@@ -28,7 +27,7 @@ return_info.py - Fetches generic data not requiring any additional information (
 
 gets_checks.py - Consisting of 'gets' and 'checks', these functions return data based on inputs (parameters), where 'checks' are limited to returning True or False.
 
-format.py - Consisting of reformatting functions. These functions require an input and return it reformatted. 
+format_data.py - Consisting of reformatting functions. These functions require an input and return it reformatted. 
 
 calculations.py - Takes an input and returns the logical output. 
 
