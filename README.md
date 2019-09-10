@@ -21,7 +21,7 @@ The prerequisites of profitable strategies are listed for later reference .
 
 File Guide 
 
-account.py - Exchange functions that relate directly to exchange information or account information.
+account.py - Exchange functions that relate directly to exchange and account information.
 
 return_info.py - Fetches generic data not requiring any additional information (parameters) to retrieve.
 
