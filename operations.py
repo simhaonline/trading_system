@@ -2,19 +2,15 @@ from calculations import Calculations
 
 import sqlite3
 
-from itertools import product
 import numpy as np
-#import pandas as pd
 import sys
-import csv
-import os
 import time
 
 
 
 class Operations(Calculations):
     """
-    - Operations combine calculations and data functions to perform specific tasks (operations)
+    Operations combining fetching data, reformatting, calculations and function specific code to perform tasks (operations).
     """
             
     def __init__(self):
@@ -39,7 +35,6 @@ class Operations(Calculations):
     def apply_to_all(self, function):
         """Take a function and apply it to every table"""
         pass
-#        all_tables = self.get
     
 
     def new_create_table(self, pair, tick_size):
@@ -65,21 +60,21 @@ class Operations(Calculations):
     
     def check_db_gaps(self, pair, tick_size):
         """Check if any gaps exist in the table"""
-        binance_records = self.timestamps_on_binance(pair, tick_size) #amount of records theoretically on binance
+        binance_records = self.timestamps_on_binance(pair, tick_size)
         table_name = self.return_table_name(pair, tick_size)
         self.c.execute(f"""SELECT Unix_Open FROM {table_name}""")
-        table_records = self.c.fetchall() # amount of records in table
-        actual_difference = np.setdiff1d(binance_records, table_records) # find elements of binance_records that are not in table_records 
+        table_records = self.c.fetchall() 
+        actual_difference = np.setdiff1d(binance_records, table_records) 
         """All elements in actual differences need to be downloaded, but rather than request them individually and as many records will occur in a row, start/ end points for missing periods are identified"""
-        records_to_dl = np.isin(binance_records,actual_difference) # create boolean array of binance records, false where binance record already exists in table
-        new = np.where(records_to_dl == False, 0, binance_records) # for each record in binance records, if record in table, write 2, else write timestamp
+        records_to_dl = np.isin(binance_records,actual_difference)
+        new = np.where(records_to_dl == False, 0, binance_records) 
         """Compare each element of an array against the next element by creating a copy of the array and deleting the first element from the new and the last from the old"""
         diff_between_elements = np.diff(new)
         tick_in_ms = self.return_tick_in_ms(tick_size)
-        arr = np.where(diff_between_elements == 0, 2, diff_between_elements) # if not downloading set value to 2
-        arr_start = np.where(arr>tick_in_ms, -1, arr) # start timestamps
-        arr_start_end = np.where(arr_start<-1, 1, arr_start) # end timestamps
-        arr_dl = np.where(arr_start_end>2, 0, arr_start_end) # set values inbetween start and end to 0
+        arr = np.where(diff_between_elements == 0, 2, diff_between_elements)
+        arr_start = np.where(arr>tick_in_ms, -1, arr)
+        arr_start_end = np.where(arr_start<-1, 1, arr_start) 
+        arr_dl = np.where(arr_start_end>2, 0, arr_start_end) 
         """Add back in what the first element would have been if it wasn't lost when differencing"""
         first_lost_element = {-1:2, 0:-1, 1:-1, 2:2}
         for adj_e, insert_e in first_lost_element.items():
@@ -89,8 +84,8 @@ class Operations(Calculations):
         starts = arr_dl[arr_dl == -1]
         ends = arr_dl[arr_dl == 1]
         if arr_dl[-1] == 0:
-                arr_dl = np.delete(arr_dl,-1) # delete last value from array since last element should be a 1 
-                arr_dl = np.insert(arr_dl, -1, 1) # add 1 to end of array
+                arr_dl = np.delete(arr_dl,-1) 
+                arr_dl = np.insert(arr_dl, -1, 1) 
         """Return starts, ends and count how many changes will be made."""
         starts = binance_records[arr_dl == -1]
         ends = binance_records[arr_dl == 1]
@@ -314,21 +309,6 @@ class Operations(Calculations):
         con.close() 
                 
                 
-                
-                
-                
-        
-        
-#        unexpected_timestamps = unexpected_timestamps.tolist()
-#        self.c.execute(f"""SELECT Unix_Open FROM {table_name} WHERE Unix_Open IN ({unexpected_timestamps})""")
-#        timestamps_to_delete = self.c.fetchall()
-#        table_timestamps = np.array(table_timestamps)
-#        np.concatenate(table_timestamps, axis=0)
-        #self.c.execute(f"""DELETE FROM {table_name} WHERE Unix_Open NOT IN {expected_timestamps}""")
-  #      self.conn.commit()
-#        return expected_timestamps, table_timestamps, unexpected_timestamps
-#        return unusual_timestamps
-        
     def load_table_data(self, pair, tick_size):
         """load the data from the SQL database and return as a dataframe"""
         table_name = self.return_table_name(pair, tick_size)
@@ -344,11 +324,7 @@ class Operations(Calculations):
         print(f'Get new data for {pair} ({tick_size})...')
         ohlc_data = self.get_ohlc_data(pair, tick_size, start, end)
         ohlc_formatted = self.format_ohlc_data(ohlc_data)
-        return ohlc_formatted
-
-            
-            
-    #create function that combines the three functions below?        
+        return ohlc_formatted   
             
             
     def update_table(self, pair, tick_size):
@@ -393,17 +369,13 @@ class Operations(Calculations):
             Taker_Buy_Quote_Asset_Volume REAL NOT NULL
             )""")
         print("Tables have been updated for all possible pair-tick size combinations.")    
-        
-        
-
-            
+          
 
     def return_new_symbols(self):
         """Download the latest Binance symbols. Return any not in the master symbols table."""
         all_symbols = self.return_exchange_pairs()
         new_symbols = []
         for symbol in all_symbols:
-#            print(symbol)
             self.c.execute("""SELECT Master_pair_list FROM master_symbols WHERE Master_pair_list=?""",(symbol,))
             result = self.c.fetchone()
             if result:
@@ -475,8 +447,3 @@ class Operations(Calculations):
                  print(f"{combo} table now recorded as populated.")
         else:
             print("error at record_populated_table")
-            
-            
-
-        
-        
