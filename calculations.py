@@ -1,4 +1,3 @@
-from get_data import GetData
 from format_data import FormatData
 
 import numpy as np
@@ -6,11 +5,17 @@ import time
 
 class Calculations(FormatData):
     """
-    - Functions that perform calculations on input data, often returning the result as an output
+    - Functions always require data as a parameter
+    - Functions that perform calculations on provided data, returning new data (not reformatted)
     """
     
     def __init__(self):
         super(Calculations, self).__init__()
+        
+        
+####### Database
+
+
         
     def return_strategy_headers(self, strategy_name):
         strat_dict = self.return_strategy_dict()

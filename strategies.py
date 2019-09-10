@@ -1,9 +1,6 @@
 
 # https://towardsdatascience.com/trading-strategy-technical-analysis-with-python-ta-lib-3ce9d6ce5614
 
-
-
-
 from operations import Operations
 
 import pandas as pd
@@ -18,7 +15,7 @@ class Strategy(Operations):
     
     Each strategy should apply various logics to a standardised data input, generate buy/ sell signals accordingly and then output
     a standardised array of signals of equal length to the input data. Each data point (tick) will either be have the strategy of
-    buy or sell, taking the form of 1 for buy and -1 for sell. Buying/ selling occurs at points of fluctation between 1 and -1.
+    buy or sell, taking the form of 1 for buy and -1 for sell. Buying/ selling occurs at points of fluctuation between 1 and -1.
 
     """
     def __init__(self):
@@ -61,6 +58,18 @@ class Strategy(Operations):
             ax = data[['Close','SMA_S','SMA_L','Signal']].plot(figsize=(15,6),secondary_y='Signal')
             ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
             return data
+
+    def find_downtrend_slope(self):
+        """
+        - Take the lows of the last X ticks, produce a linear of lowest lows of last n points, to show where they expect the next local low
+        - Repeat for X last lows, average results to make a trajectory?
+        
+        """
+        
+    def calc_ma_target(self):
+        """
+        moving averages are used as targets, calculate moving averages of various time spans.
+        """
 
 
 #    def strategy_returns(self,pair_df, start,end='now'):

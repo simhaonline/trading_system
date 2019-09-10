@@ -10,10 +10,10 @@ class Account():
     def __init__(self):
         super(Account, self).__init__()
         self.symbol_history_file = 'D:/Python/python_work/trading_system/symbol_history'
-        self.login()
+        self.account_login()
         
 
-    def login(self):
+    def account_login(self):
         """Creates Binance client for accessing exchange, account and market data."""
         file = 'c:/python/python_work/credentials.txt'
         with open(file) as f_obj:
@@ -23,13 +23,13 @@ class Account():
             self.client = Client(api_key, api_secret)
 
 
-    def my_trades(self, symbol):
+    def account_trades(self, symbol):
         """Returns account's trade history for a given symbol"""
         trades = self.client.get_my_trades(symbol=symbol)
         return trades
     
     
-    def server_time(self):
+    def exchange_server_time(self):
         """Retrieve the server time of the Binance exchange"""
         server_time = self.client.get_server_time()
         return server_time
