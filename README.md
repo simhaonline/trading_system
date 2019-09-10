@@ -1,6 +1,6 @@
 # An automated system for trading cryptocurrencies
 
-Overview:
+Overview
 
 1.) The entire history of market data for each Binance cryptocurrency is stored in a SQL database.
 
@@ -19,7 +19,7 @@ The prerequisites of profitable strategies are listed for later reference .
 
 ![Buy/ sell signals for NEOBTC (1d)](http://u.cubeupload.com/henryp/NEOBTC1dSignals.png)
 
-File guide: 
+File Guide 
 
 account.py - Exchange functions that relate directly to exchange information or account information.
 
